@@ -1,4 +1,4 @@
-name: Deploy Laravel to Digital Ocean
+name: Deploy
 
 on:
   push:
@@ -33,17 +33,23 @@ jobs:
       - name: Install Dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
+      - name: Setup Node.js and pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install JS Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build Assets
-        run: npm run build
+        run: pnpm run build
 
       - name: Configure SSH
         run: |
@@ -72,7 +78,7 @@ jobs:
           port: 22
           script: |
             cd /var/www/html/laravel
-            cp .env.example .env
+            cp .env.example .env  # Ensure you've set up .env.example properly for production
             php artisan key:generate --force
             php artisan down
             php artisan storage:link
