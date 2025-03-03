@@ -1,0 +1,89 @@
+name: Deploy Laravel to Digital Ocean
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, fileinfo, mysql
+          coverage: xdebug
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install JS Dependencies
+        run: npm ci
+
+      - name: Build Assets
+        run: npm run build
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DO_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Digital Ocean
+        run: |
+          rsync -avz --exclude '.git' \
+                     --exclude 'node_modules' \
+                     --exclude '.github' \
+                     --exclude '.env' \
+                     --exclude 'storage/framework/cache/*' \
+                     --exclude 'storage/framework/sessions/*' \
+                     --exclude 'storage/framework/views/*' \
+                     ./ ${{ secrets.SSH_USER }}@${{ secrets.DO_HOST }}:/var/www/html/laravel
+
+      - name: Execute deployment commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /var/www/html/laravel
+            cp .env.example .env
+            php artisan key:generate --force
+            php artisan down
+            php artisan storage:link
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            # Set proper permissions
+            sudo chown -R www-data:www-data /var/www/html/laravel
+            sudo find /var/www/html/laravel -type f -exec chmod 644 {} \;
+            sudo find /var/www/html/laravel -type d -exec chmod 755 {} \;
+            sudo chmod -R 775 /var/www/html/laravel/storage /var/www/html/laravel/bootstrap/cache
+            php artisan up
