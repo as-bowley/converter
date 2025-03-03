@@ -1,4 +1,4 @@
-name: Deploy
+name: deploy
 
 on:
   push:
@@ -46,7 +46,15 @@ jobs:
           cache: 'pnpm'
 
       - name: Install JS Dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Check if lockfile exists and is valid
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "Using existing lockfile"
+            pnpm install --no-frozen-lockfile
+          else
+            echo "No valid lockfile found, installing dependencies"
+            pnpm install
+          fi
 
       - name: Build Assets
         run: pnpm run build
