@@ -9,13 +9,21 @@ const output = ref('');
 
 const { convert, conversionLoading, conversionError } = useConverter();
 
-const conversionMethod = ref<string>('htmlToMarkdown');
+type ConversionMethod = 'htmlToMarkdown' | 'markdownToHtml';
+
+const conversionMethod = ref<ConversionMethod>('htmlToMarkdown');
 
 const handleConversion = async () => {
     const result = await convert(input.value, conversionMethod.value);
     if (result) {
         output.value = result;
     }
+};
+
+const handleTabSwitch = (method: ConversionMethod) => {
+    input.value = '';
+    output.value = '';
+    conversionMethod.value = method;
 };
 </script>
 
@@ -25,10 +33,10 @@ const handleConversion = async () => {
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
     <div class="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] dark:bg-[#0a0a0a] lg:justify-center lg:p-8">
-        <header class="not-has-[nav]:hidden mb-6 w-full max-w-[335px] text-sm lg:max-w-4xl">
+        <header class="not-has-[nav]:hidden mb-6 w-full max-w-[656px] text-sm lg:max-w-4xl">
             <nav class="flex items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-xl font-semibold">Converter</h1>
+                    <h1 class="text-xl font-semibold">Code Converter</h1>
                 </div>
                 <div>
                     <Link
@@ -56,32 +64,32 @@ const handleConversion = async () => {
             </nav>
         </header>
         <div class="duration-750 starting:opacity-0 flex w-full items-center justify-center opacity-100 transition-opacity lg:grow">
-            <main class="w-full max-w-[335px] overflow-hidden lg:max-w-4xl">
+            <main class="w-full max-w-[656px] overflow-hidden lg:max-w-4xl">
                 <div class="mb-4 flex space-x-2">
                     <button
                         class="rounded-lg border px-4 py-2"
                         :class="conversionMethod === 'htmlToMarkdown' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-800'"
-                        @click="conversionMethod = 'htmlToMarkdown'"
+                        @click="handleTabSwitch('htmlToMarkdown')"
                     >
                         HTML to Markdown
                     </button>
                     <button
                         class="rounded-lg border px-4 py-2"
                         :class="conversionMethod === 'markdownToHtml' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-800'"
-                        @click="conversionMethod = 'markdownToHtml'"
+                        @click="handleTabSwitch('markdownToHtml')"
                     >
                         Markdown to HTML
                     </button>
                 </div>
 
-                <div class="grid h-[500px] grid-cols-2 gap-4">
+                <div class="grid h-[500px] gap-4 md:grid-cols-2">
                     <div class="flex h-full w-full flex-col rounded border">
                         <p class="bg-gray-100 p-2 text-sm font-medium">
                             {{ conversionMethod === 'htmlToMarkdown' ? 'HTML Input' : 'Markdown Input' }}
                         </p>
                         <div class="flex-1">
                             <template v-if="true">
-                                <CodeEditor v-if="conversionMethod === 'html'" v-model="input" language="html" />
+                                <CodeEditor v-if="conversionMethod === 'htmlToMarkdown'" v-model="input" language="html" />
                                 <CodeEditor v-else v-model="input" language="markdown" />
                             </template>
                         </div>

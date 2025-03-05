@@ -1,5 +1,13 @@
 <template>
-    <div class="h-full">
+    <div class="relative h-full">
+        <button
+            class="absolute right-1.5 top-1.5 z-10 rounded-lg border border-transparent p-1.5 text-sm text-gray-100 transition-colors duration-150 hover:border-gray-200"
+            :class="isCopied ? 'bg-green-600 text-white' : 'text-gray-100 hover:border-gray-200'"
+            @click="handleCopy(inputContent)"
+        >
+            <CheckIcon v-if="isCopied" class="size-4" />
+            <CopyIcon v-else class="size-4" />
+        </button>
         <codemirror
             v-model="inputContent"
             :placeholder="placeholder"
@@ -18,6 +26,7 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state'; // Import EditorState
 import { oneDark } from '@codemirror/theme-one-dark';
 import { basicSetup } from 'codemirror';
+import { CheckIcon, CopyIcon } from 'lucide-vue-next';
 import { computed, ref, shallowRef, watch } from 'vue';
 import { Codemirror } from 'vue-codemirror';
 
@@ -65,6 +74,25 @@ const extensionsValue = computed(() => {
 const placeholder = computed(() => {
     return props.language === 'html' ? 'Enter HTML here...' : 'Enter Markdown here...';
 });
+
+const isCopied = ref(false);
+
+const handleCopy = (content: string) => {
+    if (isCopied.value) return;
+
+    navigator.clipboard
+        .writeText(content)
+        .then(() => {
+            isCopied.value = true;
+
+            setTimeout(() => {
+                isCopied.value = false;
+            }, 2000);
+        })
+        .catch((err) => {
+            console.error('Failed to copy: ', err);
+        });
+};
 
 watch(
     () => props.modelValue,
