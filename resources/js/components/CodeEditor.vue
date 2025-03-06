@@ -1,5 +1,5 @@
 <template>
-    <div class="relative h-full">
+    <div class="relative h-full rounded-lg">
         <button
             class="absolute right-1.5 top-1.5 z-10 rounded-lg border border-transparent p-1.5 text-sm text-gray-100 transition-colors duration-150 hover:border-gray-200"
             :class="isCopied ? 'bg-green-600 text-white' : 'text-gray-100 hover:border-gray-200'"
@@ -72,7 +72,7 @@ const extensionsValue = computed(() => {
 });
 
 const placeholder = computed(() => {
-    return props.language === 'html' ? 'Enter HTML here...' : 'Enter Markdown here...';
+    return props.language === 'html' ? 'HTML here...' : 'Markdown here...';
 });
 
 const isCopied = ref(false);
