@@ -86,7 +86,6 @@ jobs:
           port: 22
           script: |
             cd /var/www/html/laravel
-            cp .env.example .env  # Ensure you've set up .env.example properly for production
             php artisan key:generate --force
             php artisan down
             php artisan storage:link
